@@ -1,0 +1,242 @@
+{
+  "name": "AI-Powered Customer Support Automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "de09f78f-cbcb-4d22-84b1-f7d8c6619baa",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        768,
+        208
+      ],
+      "id": "29f92c0c-f391-4dfe-8952-0daafb10a4c6",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "sz9iWgmzL6WiMZbg",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        160,
+        208
+      ],
+      "id": "12d176b7-75cf-4e87-b556-2ea8e3922471",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "sz9iWgmzL6WiMZbg",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        0
+      ],
+      "id": "25dc8ca0-a8ae-4916-b6c6-224fa5985173",
+      "name": "Groq Chat Model2",
+      "credentials": {
+        "groqApi": {
+          "id": "sz9iWgmzL6WiMZbg",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        1264,
+        112
+      ],
+      "id": "8422d093-122e-4c92-a257-d0e2c144250d",
+      "name": "📩 Receive Customer Email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m4rgVyVFPzJJNMBy",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer support query classifier.\n\nRead the customer's email and classify it into exactly ONE of these categories:\n\nPayment\nRefund\nTechnical\nAccount\nOther\n\nReturn ONLY the category name.\nDo not provide an explanation.\n\nCustomer email:\n{{ $json.snippet }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        896,
+        -176
+      ],
+      "id": "aa465823-4aae-4467-9f12-c858fef20ebf",
+      "name": "🏷️ Classify Customer Query"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a professional customer support assistant.\n\nRead the customer's email and its category.\n\nGenerate a polite, clear and helpful response for the customer.\n\nCustomer email:\n{{ $('📩 Receive Customer Email').item.json.snippet }}\n\nCategory:\n{{ $('🏷️ Classify Customer Query').item.json.text }}\n\nWrite only the customer response.\nDo not mention the category or explain your classification.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        896,
+        112
+      ],
+      "id": "100fb5f2-72dd-499d-b90d-b3a8cc961fca",
+      "name": "🤖 Generate AI Reply"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('📩 Receive Customer Email').item.json.From }}",
+        "subject": "=Re: {{ $('📩 Receive Customer Email').item.json.Subject }}",
+        "message": "={{ $('🤖 Generate AI Reply').item.json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -144
+      ],
+      "id": "2c5d5420-9eaa-4b62-9599-26bf86ef8e75",
+      "name": "📤 Send Customer Reply",
+      "webhookId": "d3c80d3c-0cbf-4310-bc30-f72264493b85",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m4rgVyVFPzJJNMBy",
+          "name": "Gmail account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "🏷️ Classify Customer Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🤖 Generate AI Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Groq Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🏷️ Classify Customer Query",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📩 Receive Customer Email": {
+      "main": [
+        [
+          {
+            "node": "🏷️ Classify Customer Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🏷️ Classify Customer Query": {
+      "main": [
+        [
+          {
+            "node": "🤖 Generate AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Generate AI Reply": {
+      "main": [
+        [
+          {
+            "node": "📤 Send Customer Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c0450a87-dd6f-484e-8be5-aba69993eeb7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4e061e48daafccc60ca4f5ba5a13e39d717e742e5fd9aa1b7f331fe225d4257"
+  },
+  "nodeGroups": [],
+  "id": "JpYJDosBOPUY4NZ7",
+  "tags": []
+}
